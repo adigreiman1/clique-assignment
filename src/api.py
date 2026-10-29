@@ -1,7 +1,7 @@
 import datetime
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.responses import FileResponse
 
 from src.checkin import calculate_due_members, load_data
@@ -15,7 +15,7 @@ def home():
 
 
 @app.get("/due")
-def get_due(top: int = 5, date: datetime.date | None = None):
+def get_due(top: int = Query(5, ge=1), date: datetime.date | None = None):
     today = date or datetime.date.today()
     members, last_contacts, holidays = load_data()
     return calculate_due_members(members, last_contacts, holidays, today, top)
