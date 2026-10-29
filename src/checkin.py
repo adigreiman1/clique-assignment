@@ -20,18 +20,21 @@ def days_since(last_contact_utc: str, today: date) -> int:
 
 def is_due(member: dict, last_contact: dict | None, today: date, holidays: list[str]) -> bool:
     """Return True if the member should be contacted today."""
-    # Rule 1: no check-ins on holidays
+    # Rule 1: skip members contacted in the last 7 days
+    if last_contact is not None and days_since(last_contact["last_contact_utc"], today) < 7:
+        return False
+
+    # Rule 2: no check-ins on holidays
     if today.isoformat() in holidays:
         return False
 
-    # Rule 2: the member must have a preferred channel
+    # Rule 3: the member must have a preferred channel
     if not member["preferred_channel"].strip():
         return False
 
-    # Rule 3: no previous contact, or at least 7 days have passed
-    if last_contact is None:
-        return True
-    return days_since(last_contact["last_contact_utc"], today) >= 7
+    return True
+
+    
 
 def load_data():
     with open(f"{DATA_PATH}/members.csv") as f:
