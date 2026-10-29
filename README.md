@@ -1,168 +1,67 @@
-# Clique — Home Assignment for Internship Candidates
+# Clique Check-in Tool
 
-## Welcome!
+A tool that tells community coordinators which members are due for a check-in today, and in what order of priority.
 
-Hi there,
+It has three parts:
+- **Core logic** (`src/checkin.py`): decides who is due and calculates the priority score.
+- **API** (`src/api.py`): `GET /due?top=5&date=2025-11-05`
+- **Web page** (`src/index.html`): a table of members due, with a date picker.
 
-Thank you for applying to join Clique — a social-tech startup building tools that help elderly communities stay connected and make it easier for coordinators and volunteers to manage communication and care.
+## How to run
 
-We're not testing how much you already know — we're looking for curious, proactive people who enjoy exploring problems and finding simple, thoughtful solutions.
-
-You're welcome to use AI tools (like ChatGPT, Copilot, etc.) if they help you learn or speed things up — but please make sure you understand every line of your code and can explain your reasoning. During the next stage, we might ask you to modify or extend your own code live, so being familiar with your solution is essential.
-
-Keep it clean, creative, and clear — we care more about your thinking than perfection.
-
-Have fun and show us how you approach challenges 🌿
-
----
-
-## The Goal
-
-Build a simple web-based or command-line tool that helps community coordinators see which members might need a check-in today.
-
-You can use any programming language or framework you're comfortable with — Python, JavaScript, TypeScript, Java, etc.
-
-**You have up to 2 hours to work on it and 48 hours to submit your results.**
-
----
-
-## The Data
-
-You'll receive three small files:
-
-### `members.csv`
-
-```csv
-member_id,full_name,age,preferred_channel,risk_flags
-1,Ruth Cohen,82,call,lives_alone
-2,Joseph Levi,76,sms,
-3,Sarah Adler,90,whatsapp,lives_alone;recent_discharge
-4,Danny Israel,68,call,
-```
-
-### `last_contacts.csv`
-
-```csv
-member_id,last_contact_utc,outcome
-1,2025-10-30T08:00:00Z,ok
-2,2025-10-28T17:00:00Z,no_answer
-3,2025-10-27T09:00:00Z,escalate
-4,2025-10-20T10:00:00Z,ok
-```
-
-### `holidays.json`
-
-```json
-["2025-11-07", "2025-12-25"]
-```
-
----
-
-## The Task
-
-Create a small program that determines which members are "due for a check-in" today, and in what order of priority.
-
-### 1. Who qualifies for a check-in?
-
-A member should appear in the list if:
-
-- They haven't been contacted for at least 7 days (or have no record yet).
-- Today is not a holiday (based on `holidays.json`).
-- Their preferred communication channel exists.
-
-### 2. Priority score
-
-For each member, calculate a `priority_score`:
-
-- **+3** if they have `recent_discharge`
-- **+2** if they have `lives_alone`
-- **+1** if age ≥ 80
-- **+1** if their last contact outcome was `no_answer`
-- **+** `days_since_last_contact / 7` (a fractional bonus for longer gaps)
-
-Then, sort descending by priority score.
-
-### 3. Output
-
-Print or return a list of the top members who need attention today, showing:
-
-- `member_id`
-- `full_name`
-- `priority_score`
-- `recommended_window`
-
-**Example output:**
+1. Create and activate a virtual environment, then install the dependencies:
 
 ```
-member_id  full_name      priority_score  recommended_window
-3          Sarah Adler    7.8             morning
-2          Joseph Levi    5.1             afternoon
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install fastapi uvicorn pytest
 ```
 
-**Hint:** for members aged 80+, recommend `"morning"`, otherwise `"afternoon"`.
+2. Command line (the date is optional and defaults to today):
 
-### 4. Interface
-
-Choose one of the following:
-
-**Command-line version:**
-```bash
-checkin --top 5
+```
+python src\checkin.py 2025-11-05
 ```
 
-**Web/API version:**
+3. Web page and API:
+
 ```
-GET /due?top=5
+python -m uvicorn src.api:app --reload
 ```
 
-Either version is fine — keep it simple.
+Then open `http://127.0.0.1:8000/` for the page, or `http://127.0.0.1:8000/due?top=5&date=2025-11-05` for the raw JSON.
 
----
+4. Tests:
 
-## Minimum Requirements
+```
+python -m pytest
+```
 
-- ✅ Code that runs and produces the expected output.
-- ✅ At least 2–3 basic test cases, including one edge case (e.g., holiday or missing last contact).
-- ✅ A short README file that explains:
-  - How to run your solution.
-  - What assumptions you made.
-  - What you would improve if you had more time.
+Note: the sample data is from October 2025, so use a date around `2025-11-05` to see meaningful results. The web page starts on that date for the same reason. With today's real date every gap would be about a year long.
 
----
+## Assumptions
 
-## Submission
+- **"Today" is a parameter.** The logic never reads the clock itself, which makes it testable and lets us run it on the 2025 sample data.
+- **Days are calendar days, in UTC.** Only dates are compared, not hours. A member last contacted a week ago in the evening counts as 7 days.
+- **Exactly 7 days qualifies** ("at least 7 days").
+- **A channel "exists" if the field is not empty.** I did not hard-code a list of channels, because the sample data may not show every channel that exists.
+- **Members with no contact record are included** (as the task says). They have no date to measure a gap from, so they get no time bonus and no `no_answer` bonus. Their score comes only from their risk flags and age.
+- **If a member has several contact records, the latest one is used.**
+- **On a holiday, nobody is returned.** The web page shows a message instead of an empty table.
+- **The `escalate` outcome has no points,** because the task does not define any.
+- **Sorting uses the exact score.** Rounding to one decimal happens only for display, so two close scores are not treated as a tie.
+- **Ties** keep the order of the members file.
 
-Please send a GitHub link or a ZIP file with your code and README.
+## What I would improve with more time
 
-- **Estimated time:** up to 2 hours.
-- **Submission deadline:** within 48 hours of receiving this task.
+- Show members who were never contacted separately, so they are not buried low in the list just because they have no gap to measure.
+- Decide how `escalate` should affect priority, together with a coordinator.
+- Show why a member has their score (for example "+3 discharge, +2 lives alone"), so coordinators can trust the order.
+- Validate the input files (bad ages, unknown channels, malformed rows) and report problems clearly.
+- Use Israel local time for "today" instead of UTC.
+- Move the scoring weights into a config file, so they can be tuned without changing code.
+- Add API tests, and a clear tie-breaking rule.
 
----
+## Tools and how I worked
 
-## Tips
-
-- Focus on clarity and reasoning — not fancy libraries.
-- Use clear variable names and comments to explain your logic.
-- If something is unclear, make a reasonable assumption and note it in the README.
-- Bonus points for small, thoughtful touches (like readable output formatting).
-
----
-
-## Getting Started
-
-This repository includes starter files in both Python and JavaScript to help you get started. You can find them in the `src/` directory:
-
-- `src/starter.py` — Python starter template
-- `src/starter.js` — Node.js starter template
-
-Feel free to modify these files or start from scratch — whatever works best for you!
-
-The data files can be found in the `data/` directory. You may need to generate the CSV files using the provided script, or create sample data based on the examples above.
-
----
-
-## Good Luck! 🍀
-
-**The Clique Team**  
-*Connecting communities. Empowering people.*
-
+[Edit this section in your own words: which tools you used, why, what you checked or changed, and what you would do differently.]
