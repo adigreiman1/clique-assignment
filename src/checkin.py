@@ -8,7 +8,7 @@ from pathlib import Path
 # You may freely modify this file or start from scratch.
 # The data files are located in ../data/
 
-DATA_PATH = "../data"
+DATA_PATH = (Path(__file__).resolve() / ".." / ".." / "data").resolve()
 
 def parse_flags(raw: str) -> set[str]:
     """Return the member's risk statuses as a set."""
