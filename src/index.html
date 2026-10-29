@@ -39,6 +39,11 @@
     tr:hover {
       background: #f2f7f4;
     }
+
+    #message {
+      text-align: center;
+      color: #666;
+    }
   </style>
 </head>
 
@@ -63,6 +68,8 @@
     <tbody id="rows"></tbody>
   </table>
 
+  <p id="message"></p>
+
   <script>
     async function loadRows() {
       const date = document.getElementById("date").value;
@@ -72,7 +79,14 @@
       const members = await response.json();
 
       const rows = document.getElementById("rows");
+      const message = document.getElementById("message");
       rows.innerHTML = "";
+
+      if (members.length === 0) {
+        message.textContent = "No members due for check-in on this date (it may be a holiday).";
+      } else {
+        message.textContent = "";
+      }
 
       for (const m of members) {
         rows.innerHTML += `<tr>
