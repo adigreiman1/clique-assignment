@@ -99,6 +99,16 @@ def calculate_due_members(members, last_contacts, holidays, today, top=5):
         r["priority_score"] = round(r["priority_score"], 1)
     return top_results
 
+def print_table(results):
+    """Print the results as an aligned table."""
+    if not results:
+        print("No members due for check-in on this date.")
+        return
+
+    print(f"{'member_id':<10} {'full_name':<16} {'priority_score':<16} recommended_window")
+    for r in results:
+        print(f"{r['member_id']:<10} {r['full_name']:<16} {r['priority_score']:<16} {r['recommended_window']}")
+
 
 def main():
     members, last_contacts, holidays = load_data()
@@ -106,8 +116,7 @@ def main():
     today = date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else date.today()
     results = calculate_due_members(members, last_contacts, holidays, today)
     print(f"Members due for check-in on {today}:")
-    for m in results:
-        print(m)
+    print_table(results)
 
 if __name__ == "__main__":
     main()
