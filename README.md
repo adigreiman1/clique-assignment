@@ -17,7 +17,7 @@ python -m venv .venv
 python -m pip install fastapi uvicorn pytest
 ```
 
-2. Command line (the date is optional and defaults to today):
+2. Command line (optional, a quick way to run the logic without a server; the date is optional and defaults to today):
 
 ```
 python src\checkin.py 2025-11-05
@@ -58,13 +58,23 @@ Note: the sample data is from October 2025, so use a date around `2025-11-05` to
 
 ## What I would improve with more time
 
-- Show members who were never contacted separately, so they are not buried low in the list just because they have no gap to measure.
+- Show members who were never contacted separately, or ask a coordinator how they should be ranked, so they are not buried low in the list just because they have no gap to measure.
 - Decide how `escalate` should affect priority, together with a coordinator.
 - Validate the input files (bad ages, unknown channels, malformed rows) and report problems clearly.
 - Use Israel local time for "today" instead of UTC.
 - Move the scoring weights into a config file, so they can be tuned without changing code.
 - Add API tests, and a clear tie-breaking rule.
+- Add a "Contact" button on each member that opens the conversation in their preferred channel (call, SMS or WhatsApp). This needs phone numbers, which are not in the current data.
+- Improve the visual design of the page, for example better support for small screens.
 
 ## Tools and how I worked
 
-[Edit this section in your own words: which tools you used, why, what you checked or changed, and what you would do differently.]
+I used two AI tools:
+- **Claude (chat):** I used it as a guide, not as a code generator. Before every step I asked what the step does and why, discussed how to approach it, and used it to check that I hadn't missed a requirement and to help with syntax. I kept the work in small steps so I could understand every line.
+- **Claude Code:** I used it for the score breakdown feature. I wrote the prompts, asked it to read the code and show a plan before changing anything, and reviewed what it did.
+
+### Where I questioned the AI's suggestions
+- **Members with no contact record.** The AI suggested treating them as "30 days since contact" so they rise in the list. I rejected it, because 30 is an invented number the task doesn't mention. Instead they get no time bonus, and I listed this as a known weakness above.
+- **What counts as an existing channel.** The AI first suggested a fixed list of channels. I disagreed: the sample data is small, and a fixed list would silently drop any new channel.
+- **The score breakdown view.** The first version added a column that took over the whole table. I asked for a "Details" button that is hidden by default, then changed the layout until it was easy to scan.
+- **HTML injection.** The AI offered to leave this as a README note. I decided to fix it now.
