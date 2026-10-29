@@ -35,25 +35,31 @@ def is_due(member: dict, last_contact: dict | None, today: date, holidays: list[
 
     return True
 
-def priority_score(member: dict, last_contact: dict | None, today: date) -> float:
-    """Return how urgently the member needs a check-in."""
+def score_breakdown(member: dict, last_contact: dict | None, today: date) -> list[tuple[str, float]]:
+    """Return each reason that adds to the score, with its points."""
     flags = parse_flags(member["risk_flags"])
-    score = 0.0
+    reasons = []
 
     if "recent_discharge" in flags:
-        score += 3
+        reasons.append(("recent discharge", 3))
     if "lives_alone" in flags:
-        score += 2
+        reasons.append(("lives alone", 2))
     if int(member["age"]) >= 80:
-        score += 1
+        reasons.append(("age 80+", 1))
 
-        # Only members with a contact record have an outcome and a gap to measure
+    # Only members with a contact record have an outcome and a gap to measure
     if last_contact is not None:
         if last_contact["outcome"] == "no_answer":
-            score += 1
-        score += days_since(last_contact["last_contact_utc"], today) / 7    
+            reasons.append(("last contact: no answer", 1))
+        days = days_since(last_contact["last_contact_utc"], today)
+        reasons.append((f"{days} days since contact", days / 7))
 
-    return score   
+    return reasons
+
+
+def priority_score(member: dict, last_contact: dict | None, today: date) -> float:
+    """Return how urgently the member needs a check-in."""
+    return sum((points for _, points in score_breakdown(member, last_contact, today)), 0.0)
 
 def recommended_window(member: dict) -> str:
     """Return the best time of day to contact the member."""
@@ -86,18 +92,28 @@ def calculate_due_members(members, last_contacts, holidays, today, top=5):
         last_contact = latest.get(member["member_id"])
         if not is_due(member, last_contact, today, holidays):
             continue
+        breakdown = score_breakdown(member, last_contact, today)
         results.append({
             "member_id": member["member_id"],
             "full_name": member["full_name"],
-            "priority_score": priority_score(member, last_contact, today),
+            "priority_score": sum((points for _, points in breakdown), 0.0),
             "recommended_window": recommended_window(member),
+            "_breakdown": breakdown,  # temporary; converted to the public field below
         })
 
     results.sort(key=lambda r: r["priority_score"], reverse=True)
     top_results = results[:top]
     for r in top_results:
         r["priority_score"] = round(r["priority_score"], 1)
+        r["score_breakdown"] = [
+            {"reason": reason, "points": round(points, 1)}
+            for reason, points in r.pop("_breakdown")
+        ]
     return top_results
+
+def format_breakdown(breakdown: list[dict]) -> str:
+    """Format a breakdown as text, e.g. 'recent discharge +3.0, lives alone +2.0'."""
+    return ", ".join(f"{b['reason']} +{b['points']:.1f}" for b in breakdown)
 
 def print_table(results):
     """Print the results as an aligned table."""
@@ -105,9 +121,9 @@ def print_table(results):
         print("No members due for check-in on this date.")
         return
 
-    print(f"{'member_id':<10} {'full_name':<16} {'priority_score':<16} recommended_window")
+    print(f"{'member_id':<10} {'full_name':<16} {'priority_score':<16} {'recommended_window':<20} score_breakdown")
     for r in results:
-        print(f"{r['member_id']:<10} {r['full_name']:<16} {r['priority_score']:<16} {r['recommended_window']}")
+        print(f"{r['member_id']:<10} {r['full_name']:<16} {r['priority_score']:<16} {r['recommended_window']:<20} {format_breakdown(r['score_breakdown'])}")
 
 
 def main():

@@ -10,39 +10,85 @@
       max-width: 700px;
       margin: 40px auto;
       padding: 0 20px;
+      background: #f2fafd;
     }
 
     h1 {
-      color: #2c5f4a;
+      color: #1f7a9e;
     }
 
     .controls {
       margin-bottom: 20px;
     }
 
+    input {
+      border: 1px solid #8fd3ea;
+      border-radius: 4px;
+      padding: 4px 6px;
+    }
+
+    button {
+      background: #4fb8de;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 14px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #2fa3cf;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
+      background: white;
     }
 
     th, td {
       padding: 10px 14px;
       text-align: center;
-      border-bottom: 1px solid #ddd;
+      border-bottom: 1px solid #d3eef8;
     }
 
     th {
-      background: #2c5f4a;
+      background: #4fb8de;
       color: white;
     }
 
     tr:hover {
-      background: #f2f7f4;
+      background: #e6f6fc;
+    }
+
+    .breakdown {
+      display: grid;
+      grid-template-columns: auto auto;
+      justify-content: center;
+      column-gap: 12px;
+      row-gap: 6px;
+      max-width: 320px;
+      margin: 0 auto;
+      text-align: left;
+    }
+
+    /* The line wrapper adds no box, so its two spans become cells of .breakdown */
+    .reason {
+      display: contents;
+    }
+
+    .badge {
+      justify-self: start;
+      background: #d3eef8;
+      color: #1f7a9e;
+      border-radius: 10px;
+      padding: 1px 10px;
+      font-size: 12px;
     }
 
     #message {
       text-align: center;
-      color: #666;
+      color: #5f8c9c;
     }
   </style>
 </head>
@@ -63,6 +109,7 @@
         <th>Name</th>
         <th>Priority score</th>
         <th>Recommended window</th>
+        <th></th>
       </tr>
     </thead>
     <tbody id="rows"></tbody>
@@ -89,12 +136,49 @@
       }
 
       for (const m of members) {
-        rows.innerHTML += `<tr>
-          <td>${m.member_id}</td>
-          <td>${m.full_name}</td>
-          <td>${m.priority_score}</td>
-          <td>${m.recommended_window}</td>
-        </tr>`;
+        const tr = document.createElement("tr");
+        for (const value of [m.member_id, m.full_name, m.priority_score, m.recommended_window]) {
+          const td = document.createElement("td");
+          td.textContent = value;
+          tr.appendChild(td);
+        }
+
+        // Hidden row under the member that holds the breakdown
+        const detailsRow = document.createElement("tr");
+        detailsRow.hidden = true;
+        const detailsCell = document.createElement("td");
+        detailsCell.colSpan = 5;
+        const list = document.createElement("div");
+        list.className = "breakdown";
+        for (const b of m.score_breakdown) {
+          const line = document.createElement("div");
+          line.className = "reason";
+
+          const reason = document.createElement("span");
+          reason.textContent = b.reason;
+
+          const badge = document.createElement("span");
+          badge.className = "badge";
+          badge.textContent = `+${b.points.toFixed(1)}`;
+
+          line.appendChild(reason);
+          line.appendChild(badge);
+          list.appendChild(line);
+        }
+        detailsCell.appendChild(list);
+        detailsRow.appendChild(detailsCell);
+
+        const button = document.createElement("button");
+        button.textContent = "Details";
+        button.addEventListener("click", () => {
+          detailsRow.hidden = !detailsRow.hidden;
+        });
+        const buttonCell = document.createElement("td");
+        buttonCell.appendChild(button);
+        tr.appendChild(buttonCell);
+
+        rows.appendChild(tr);
+        rows.appendChild(detailsRow);
       }
     }
 

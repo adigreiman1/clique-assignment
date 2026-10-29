@@ -81,3 +81,30 @@ def test_sorted_by_priority_score():
     assert result[0]["priority_score"] == 8.0
     assert result[0]["recommended_window"] == "morning"
     assert result[1]["recommended_window"] == "afternoon"
+
+def test_score_breakdown_explains_score():
+    members = [
+        {"member_id": "1", "full_name": "High Risk", "age": "85",
+         "preferred_channel": "sms", "risk_flags": "lives_alone;recent_discharge"},
+    ]
+    last_contacts = [
+        {"member_id": "1", "last_contact_utc": "2025-10-22T10:00:00Z", "outcome": "no_answer"},
+    ]
+
+    result = calculate_due_members(members, last_contacts, [], date(2025, 11, 5))[0]
+
+    reasons = [b["reason"] for b in result["score_breakdown"]]
+    assert reasons == ["recent discharge", "lives alone", "age 80+",
+                       "last contact: no answer", "14 days since contact"]
+    assert sum(b["points"] for b in result["score_breakdown"]) == result["priority_score"]
+
+
+def test_breakdown_without_contact_record_has_no_contact_reasons():
+    members = [
+        {"member_id": "1", "full_name": "Never Contacted", "age": "70",
+         "preferred_channel": "call", "risk_flags": "lives_alone"},
+    ]
+
+    result = calculate_due_members(members, [], [], date(2025, 11, 5))[0]
+
+    assert result["score_breakdown"] == [{"reason": "lives alone", "points": 2}]
