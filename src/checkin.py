@@ -34,7 +34,25 @@ def is_due(member: dict, last_contact: dict | None, today: date, holidays: list[
 
     return True
 
-    
+def priority_score(member: dict, last_contact: dict | None, today: date) -> float:
+    """Return how urgently the member needs a check-in."""
+    flags = parse_flags(member["risk_flags"])
+    score = 0.0
+
+    if "recent_discharge" in flags:
+        score += 3
+    if "lives_alone" in flags:
+        score += 2
+    if int(member["age"]) >= 80:
+        score += 1
+        
+        # Only members with a contact record have an outcome and a gap to measure
+    if last_contact is not None:
+        if last_contact["outcome"] == "no_answer":
+            score += 1
+        score += days_since(last_contact["last_contact_utc"], today) / 7    
+
+    return score    
 
 def load_data():
     with open(f"{DATA_PATH}/members.csv") as f:
