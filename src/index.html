@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Clique Check-ins</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    h1 {
+      color: #2c5f4a;
+    }
+
+    .controls {
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px 14px;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background: #2c5f4a;
+      color: white;
+    }
+
+    tr:hover {
+      background: #f2f7f4;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Members due for check-in</h1>
+
+  <div class="controls">
+    <label>Date: <input type="date" id="date" value="2025-11-05"></label>
+    <label>Top: <input type="number" id="top" value="5" min="1"></label>
+    <button id="load">Show</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Priority score</th>
+        <th>Recommended window</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <script>
+    async function loadRows() {
+      const date = document.getElementById("date").value;
+      const top = document.getElementById("top").value;
+
+      const response = await fetch(`/due?top=${top}&date=${date}`);
+      const members = await response.json();
+
+      const rows = document.getElementById("rows");
+      rows.innerHTML = "";
+
+      for (const m of members) {
+        rows.innerHTML += `<tr>
+          <td>${m.member_id}</td>
+          <td>${m.full_name}</td>
+          <td>${m.priority_score}</td>
+          <td>${m.recommended_window}</td>
+        </tr>`;
+      }
+    }
+
+    document.getElementById("load").addEventListener("click", loadRows);
+
+    loadRows();
+  </script>
+</body>
+</html>

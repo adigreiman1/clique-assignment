@@ -1,10 +1,17 @@
 import datetime
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 
 from src.checkin import calculate_due_members, load_data
 
 app = FastAPI()
+
+
+@app.get("/")
+def home():
+    return FileResponse(Path(__file__).parent / "index.html")
 
 
 @app.get("/due")
