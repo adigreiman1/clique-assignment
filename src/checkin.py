@@ -89,12 +89,16 @@ def calculate_due_members(members, last_contacts, holidays, today, top=5):
         results.append({
             "member_id": member["member_id"],
             "full_name": member["full_name"],
-            "priority_score": round(priority_score(member, last_contact, today), 1),
+            "priority_score": priority_score(member, last_contact, today),
             "recommended_window": recommended_window(member),
         })
 
     results.sort(key=lambda r: r["priority_score"], reverse=True)
-    return results[:top]
+    top_results = results[:top]
+    for r in top_results:
+        r["priority_score"] = round(r["priority_score"], 1)
+    return top_results
+
 
 def main():
     members, last_contacts, holidays = load_data()
