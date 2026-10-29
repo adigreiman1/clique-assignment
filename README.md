@@ -3,9 +3,9 @@
 A tool that tells community coordinators which members are due for a check-in today, and in what order of priority.
 
 It has three parts:
-- **Core logic** (`src/checkin.py`): decides who is due and calculates the priority score.
-- **API** (`src/api.py`): `GET /due?top=5&date=2025-11-05`
-- **Web page** (`src/index.html`): a table of members due, with a date picker.
+- **Core logic** (`src/checkin.py`): decides who is due, calculates the priority score and explains it.
+- **API** (`src/api.py`): `GET /due?top=5&date=2025-11-05`. Each member includes a `score_breakdown` list (reason and points).
+- **Web page** (`src/index.html`): a table of members due, with a date picker and a "Details" button that shows why each member got their score.
 
 ## How to run
 
@@ -22,6 +22,8 @@ python -m pip install fastapi uvicorn pytest
 ```
 python src\checkin.py 2025-11-05
 ```
+
+It prints the members due as an aligned table, including the score breakdown for each member.
 
 3. Web page and API:
 
@@ -51,12 +53,13 @@ Note: the sample data is from October 2025, so use a date around `2025-11-05` to
 - **The `escalate` outcome has no points,** because the task does not define any.
 - **Sorting uses the exact score.** Rounding to one decimal happens only for display, so two close scores are not treated as a tie.
 - **Ties** keep the order of the members file.
+- **The score is built from a list of reasons.** The same list produces the score and the breakdown, so they can never disagree.
+- **The web page builds its table with `createElement` and `textContent`,** so values from the server are never parsed as HTML.
 
 ## What I would improve with more time
 
 - Show members who were never contacted separately, so they are not buried low in the list just because they have no gap to measure.
 - Decide how `escalate` should affect priority, together with a coordinator.
-- Show why a member has their score (for example "+3 discharge, +2 lives alone"), so coordinators can trust the order.
 - Validate the input files (bad ages, unknown channels, malformed rows) and report problems clearly.
 - Use Israel local time for "today" instead of UTC.
 - Move the scoring weights into a config file, so they can be tuned without changing code.
