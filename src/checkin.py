@@ -1,14 +1,10 @@
 import csv
 import json
-import sys
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 from pathlib import Path
 
-# === Clique Home Assignment Starter (Python) ===
-# You may freely modify this file or start from scratch.
-# The data files are located in ../data/
 
-DATA_PATH = (Path(__file__).resolve() / ".." / ".." / "data").resolve()
+DATA_PATH = Path(__file__).resolve().parent.parent / "data"
 
 def parse_flags(raw: str) -> set[str]:
     """Return the member's risk statuses as a set."""
@@ -55,11 +51,6 @@ def score_breakdown(member: dict, last_contact: dict | None, today: date) -> lis
         reasons.append((f"{days} days since contact", days / 7))
 
     return reasons
-
-
-def priority_score(member: dict, last_contact: dict | None, today: date) -> float:
-    """Return how urgently the member needs a check-in."""
-    return sum((points for _, points in score_breakdown(member, last_contact, today)), 0.0)
 
 def recommended_window(member: dict) -> str:
     """Return the best time of day to contact the member."""
@@ -110,29 +101,3 @@ def calculate_due_members(members, last_contacts, holidays, today, top=5):
             for reason, points in r.pop("_breakdown")
         ]
     return top_results
-
-def format_breakdown(breakdown: list[dict]) -> str:
-    """Format a breakdown as text, e.g. 'recent discharge +3.0, lives alone +2.0'."""
-    return ", ".join(f"{b['reason']} +{b['points']:.1f}" for b in breakdown)
-
-def print_table(results):
-    """Print the results as an aligned table."""
-    if not results:
-        print("No members due for check-in on this date.")
-        return
-
-    print(f"{'member_id':<10} {'full_name':<16} {'priority_score':<16} {'recommended_window':<20} score_breakdown")
-    for r in results:
-        print(f"{r['member_id']:<10} {r['full_name']:<16} {r['priority_score']:<16} {r['recommended_window']:<20} {format_breakdown(r['score_breakdown'])}")
-
-
-def main():
-    members, last_contacts, holidays = load_data()
-    # Optional date argument, e.g. python checkin.py 2025-11-05
-    today = date.fromisoformat(sys.argv[1]) if len(sys.argv) > 1 else date.today()
-    results = calculate_due_members(members, last_contacts, holidays, today)
-    print(f"Members due for check-in on {today}:")
-    print_table(results)
-
-if __name__ == "__main__":
-    main()

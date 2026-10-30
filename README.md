@@ -17,15 +17,7 @@ python -m venv .venv
 python -m pip install fastapi uvicorn pytest
 ```
 
-2. Command line (optional, a quick way to run the logic without a server; the date is optional and defaults to today):
-
-```
-python src\checkin.py 2025-11-05
-```
-
-It prints the members due as an aligned table, including the score breakdown for each member.
-
-3. Web page and API:
+2. Web page and API:
 
 ```
 python -m uvicorn src.api:app --reload
@@ -33,7 +25,7 @@ python -m uvicorn src.api:app --reload
 
 Then open `http://127.0.0.1:8000/` for the page, or `http://127.0.0.1:8000/due?top=5&date=2025-11-05` for the raw JSON.
 
-4. Tests:
+3. Tests:
 
 ```
 python -m pytest
